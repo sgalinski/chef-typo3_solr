@@ -14,4 +14,4 @@ default[:typo3_solr][:versions] = {
     }
 }
 =end
-default[:typo3_solr][:solr][:solr_home] = "/opt/solr-tomcat"
+default[:typo3_solr][:solr][:solr_home] = "/srv/solr"

@@ -1,3 +1,3 @@
-<Context docBase="apache-solr-<%= @version %>.war" debug="0" crossContext="true" >
-        <Environment name="solr/home" type="java.lang.String" value="/opt/solr-tomcat/solr-<%= @version %>" override="true" />
+<Context docBase="<%= @app %>.war" debug="0" crossContext="true" >
+        <Environment name="solr/home" type="java.lang.String" value="<%= node[:typo3_solr][:solr][:solr_home] %>/<%= @app %>" override="true" />
 </Context>
