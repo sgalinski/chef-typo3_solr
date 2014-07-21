@@ -55,11 +55,13 @@ end
 
 `typo3_solr_core` is used to attach cores to a already created webapp
 
+```ruby
 typo3_solr_core "de-TestWeb-123-de_DE" do
   language 'german'
   app 'MySolrAppName'
   action :add
 end
+```
 
 License and Author
 ==================
