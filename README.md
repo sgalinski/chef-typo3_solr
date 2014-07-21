@@ -24,10 +24,23 @@ The following LWRPs are included:
 
 `typo3_solr_app` is used to create a new webapp with the given configuration
 
+For instances requiring Apache Solr < 4
+
 typo3_solr_app "MySolrAppName" do
   solr '3.5.0'
   extension '2.2'
   plugin '1.2.0'
+  languages %w{ german english french italian generic hungarian }
+end
+
+For instances requiring Apache Solr > 4
+
+typo3_solr_app "MySolrAppName" do
+  solr '4.7.1'
+  extension '3.0'
+  plugin_access '2.0'
+  plugin_utils '1.1'
+  plugin_lang '3.1'
   languages %w{ german english french italian generic hungarian }
 end
 
