@@ -1,0 +1,31 @@
+---
+driver:
+  name: vagrant
+
+provisioner:
+  name: chef_solo
+
+platforms:
+  - name: debian-7
+    driver:
+      box: opendo_debian-7-amd64
+      box_url: http://ci.opendo.at:8080/job/Packer-Debian7Amd64/ws/packer_debian-7-amd64-typo3-nginx_virtualbox.box
+      network:
+        - ["private_network", {ip: "172.16.1.3"}]
+
+suites:
+  - name: default
+    run_list:
+      - recipe[apt::default]
+      - recipe[typo3_solr::default]
+    attributes:
+  - name: typo3_solr_2-1
+    run_list:
+      - recipe[apt::default]
+      - recipe[typo3_solr::default]
+      - recipe[fake::typo3_solr_2-1]
+  - name: typo3_solr_3-0
+    run_list:
+      - recipe[apt::default]
+      - recipe[typo3_solr::default]
+      - recipe[fake::typo3_solr_3-0]
