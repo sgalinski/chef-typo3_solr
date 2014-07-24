@@ -102,13 +102,20 @@ action :add do
       action :create
     end
 
-    %w{ protwords.txt schema.xml stopwords.txt synonyms.txt }.each do | file |
+    %w{ protwords.txt schema.xml synonyms.txt }.each do | file |
       remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/#{file}" do
         source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/#{file}"
         action :create_if_missing
         owner node[:tomcat][:user]
         mode 0644
       end
+	end
+
+	remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json" do
+	  source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json"
+	  action :create_if_missing
+	  owner node[:tomcat][:user]
+	  mode 0644
     end
 
     remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/german-common-nouns.txt" do
