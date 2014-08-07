@@ -1,9 +1,11 @@
 action :add do
 
-  uri = URI("https://forge.typo3.org/projects/extension-solr/repository/revisions/solr_#{new_resource.extension}.x/raw")
+  uri = URI.parse("https://forge.typo3.org/projects/extension-solr/repository/show?rev=solr_#{new_resource.extension}.x")
 
-  request = Net::HTTP.new uri.host
-  response= request.request_head uri.path
+  request = Net::HTTP.new(uri.host, uri.port)
+  request.use_ssl = true
+  request.verify_mode = OpenSSL::SSL::VERIFY_NONE
+  response = request.request_head uri.request_uri
 
   if response.code.to_i == 200
     remote_branch = "solr_#{new_resource.extension}.x"
