@@ -104,7 +104,7 @@ action :add do
       action :create
     end
 
-    %w{ protwords.txt schema.xml stopwords.txt synonyms.txt }.each do | file |
+    %w{ protwords.txt schema.xml synonyms.txt }.each do | file |
       remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/#{file}" do
         source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/#{file}"
         action :create_if_missing
