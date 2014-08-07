@@ -13,7 +13,7 @@ action :add do
     remote_branch = "master"
   end
 
-  if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0')
+  if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0') || remote_branch == 'master'
     resources_path = "Resources/Solr"
   else
     resources_path = "resources/solr"
