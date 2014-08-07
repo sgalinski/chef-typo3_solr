@@ -113,6 +113,22 @@ action :add do
       end
     end
 
+    if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0') then
+      remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json" do
+        source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json"
+        action :create_if_missing
+        owner node[:tomcat][:user]
+        mode 0644
+      end
+    else
+      remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/stopwords.txt" do
+        source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/stopwords.txt"
+        action :create_if_missing
+        owner node[:tomcat][:user]
+        mode 0644
+      end
+    end
+
     remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/german-common-nouns.txt" do
       source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/german-common-nouns.txt"
       action :create_if_missing
