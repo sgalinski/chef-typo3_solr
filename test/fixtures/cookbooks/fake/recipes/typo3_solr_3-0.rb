@@ -1,5 +1,5 @@
 typo3_solr_app "c015" do
-  solr '4.7.1'
+  solr '4.7.2'
   extension '3.0'
   plugin_access '2.0'
   plugin_utils '1.1'
