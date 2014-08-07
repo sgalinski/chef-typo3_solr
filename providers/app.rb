@@ -1,9 +1,11 @@
 action :add do
 
-  uri = URI("https://forge.typo3.org/projects/extension-solr/repository/revisions/solr_#{new_resource.extension}.x/raw")
+  uri = URI.parse("https://forge.typo3.org/projects/extension-solr/repository/show?rev=solr_#{new_resource.extension}.x")
 
-  request = Net::HTTP.new uri.host
-  response= request.request_head uri.path
+  request = Net::HTTP.new(uri.host, uri.port)
+  request.use_ssl = true
+  request.verify_mode = OpenSSL::SSL::VERIFY_NONE
+  response = request.request_head uri.request_uri
 
   if response.code.to_i == 200
     remote_branch = "solr_#{new_resource.extension}.x"
@@ -11,7 +13,7 @@ action :add do
     remote_branch = "master"
   end
 
-  if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0')
+  if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0') || remote_branch == 'master'
     resources_path = "Resources/Solr"
   else
     resources_path = "resources/solr"
@@ -102,9 +104,25 @@ action :add do
       action :create
     end
 
-    %w{ protwords.txt schema.xml stopwords.txt synonyms.txt }.each do | file |
+    %w{ protwords.txt schema.xml synonyms.txt }.each do | file |
       remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/#{file}" do
         source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/#{file}"
+        action :create_if_missing
+        owner node[:tomcat][:user]
+        mode 0644
+      end
+    end
+
+    if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0') then
+      remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json" do
+        source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json"
+        action :create_if_missing
+        owner node[:tomcat][:user]
+        mode 0644
+      end
+    else
+      remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/stopwords.txt" do
+        source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/stopwords.txt"
         action :create_if_missing
         owner node[:tomcat][:user]
         mode 0644
