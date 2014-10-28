@@ -16,3 +16,19 @@ describe "Solr available" do
   end
 
 end
+
+describe "TYPO3-specific libraries are downloaded" do
+
+  it "downloads typo3 acces-plugin" do
+    expect(file('/srv/solr/c015/typo3lib/solr-typo3-access-2.0.jar')).to be_file
+  end
+
+  it "downloads typo3 utils-plugin" do
+    expect(file('/srv/solr/c015/typo3lib/solr-typo3-utils-1.1.jar')).to be_file
+  end
+
+  it "downloads lang-plugin" do
+    expect(file('/srv/solr/c015/typo3lib/commons-lang3-3.1.jar')).to be_file
+  end
+
+end

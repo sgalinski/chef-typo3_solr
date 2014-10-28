@@ -1,9 +1,11 @@
 action :add do
 
-  uri = URI("https://forge.typo3.org/projects/extension-solr/repository/revisions/solr_#{new_resource.extension}.x/raw")
+  uri = URI.parse("https://forge.typo3.org/projects/extension-solr/repository/show?rev=solr_#{new_resource.extension}.x")
 
-  request = Net::HTTP.new uri.host
-  response= request.request_head uri.path
+  request = Net::HTTP.new(uri.host, uri.port)
+  request.use_ssl = true
+  request.verify_mode = OpenSSL::SSL::VERIFY_NONE
+  response = request.request_head uri.request_uri
 
   if response.code.to_i == 200
     remote_branch = "solr_#{new_resource.extension}.x"
@@ -11,7 +13,7 @@ action :add do
     remote_branch = "master"
   end
 
-  if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0')
+  if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0') || remote_branch == 'master'
     resources_path = "Resources/Solr"
   else
     resources_path = "resources/solr"
@@ -35,7 +37,7 @@ action :add do
     end
   end
 
-  execute "decompress-solr-archive" do
+  execute "decompress-solr-archive - #{new_resource.name}" do
     cwd Chef::Config[:file_cache_path]
     command "tar -xzf apache-solr-#{new_resource.solr}.tar.gz"
     creates "#{Chef::Config[:file_cache_path]}/apache-solr-#{new_resource.solr}/dist/apache-solr-#{new_resource.solr}.war"
@@ -44,36 +46,36 @@ action :add do
   # copy solr war-file
 
   if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0')
-    execute "rename-solr-dir" do
+    execute "rename-solr-dir - #{new_resource.name}" do
       cwd Chef::Config[:file_cache_path]
       command "mv solr-#{new_resource.solr} apache-solr-#{new_resource.solr}"
       creates "#{Chef::Config[:file_cache_path]}/apache-solr-#{new_resource.solr}"
     end
 
-    execute "copy-solr-app" do
+    execute "copy-solr-app - #{new_resource.name}" do
       cwd Chef::Config[:file_cache_path]
       command "cp apache-solr-#{new_resource.solr}/dist/solr-#{new_resource.solr}.war #{node[:tomcat][:webapp_dir]}/#{new_resource.name}.war"
       creates "#{node[:tomcat][:webapp_dir]}/#{new_resource.name}.war"
     end
   else
-    execute "copy-solr-app" do
+    execute "copy-solr-app - #{new_resource.name}" do
       cwd Chef::Config[:file_cache_path]
       command "cp apache-solr-#{new_resource.solr}/dist/apache-solr-#{new_resource.solr}.war #{node[:tomcat][:webapp_dir]}/#{new_resource.name}.war"
       creates "#{node[:tomcat][:webapp_dir]}/#{new_resource.name}.war"
     end
   end
 
-  execute "copy-solr-libs" do
+  execute "copy-solr-libs - #{new_resource.name}" do
     cwd Chef::Config[:file_cache_path]
     command "cp apache-solr-#{new_resource.solr}/example/lib/ext/*.jar #{node["tomcat"]["home"]}/lib/"
     only_if { Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0') }
   end
 
-  execute "chmod" do
+  execute "chmod - #{new_resource.name}" do
     command "chmod -R 777 #{node["tomcat"]["home"]}/lib/"
   end
 
-  execute "copy-log4j-properties" do
+  execute "copy-log4j-properties - #{new_resource.name}" do
     cwd Chef::Config[:file_cache_path]
     command "cp apache-solr-#{new_resource.solr}/example/resources/log4j.properties #{node["tomcat"]["home"]}/lib/log4j.properties"
     creates "#{node["tomcat"]["home"]}/lib/log4j.properties"
@@ -88,7 +90,7 @@ action :add do
     recursive true
   end
 
-  execute "copy-solr-files" do
+  execute "copy-solr-files - #{new_resource.name}" do
     cwd Chef::Config[:file_cache_path]
     command "cp -r apache-solr-#{new_resource.solr}/example/solr/* #{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/"
     creates
@@ -102,9 +104,25 @@ action :add do
       action :create
     end
 
-    %w{ protwords.txt schema.xml stopwords.txt synonyms.txt }.each do | file |
+    %w{ protwords.txt schema.xml synonyms.txt }.each do | file |
       remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/#{file}" do
         source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/#{file}"
+        action :create_if_missing
+        owner node[:tomcat][:user]
+        mode 0644
+      end
+    end
+
+    if Gem::Version.new(new_resource.solr) >= Gem::Version.new('4.0.0') then
+      remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json" do
+        source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/_schema_analysis_stopwords_#{language}.json"
+        action :create_if_missing
+        owner node[:tomcat][:user]
+        mode 0644
+      end
+    else
+      remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3cores/conf/#{language}/stopwords.txt" do
+        source "https://forge.typo3.org/projects/extension-solr/repository/revisions/#{remote_branch}/raw/#{resources_path}/typo3cores/conf/#{language}/stopwords.txt"
         action :create_if_missing
         owner node[:tomcat][:user]
         mode 0644
@@ -173,11 +191,11 @@ action :add do
     mode 0775
   end
 
-  execute "copy-dist" do
+  execute "copy-dist - #{new_resource.name}" do
     command "cp -r #{Chef::Config[:file_cache_path]}/apache-solr-#{new_resource.solr}/dist #{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/"
   end
 
-  execute "copy-contrib" do
+  execute "copy-contrib - #{new_resource.name}" do
     command "cp -r #{Chef::Config[:file_cache_path]}/apache-solr-#{new_resource.solr}/contrib #{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/"
   end
 
@@ -191,7 +209,7 @@ action :add do
   remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3lib/solr-typo3-plugin-#{new_resource.plugin}.jar" do
     source "http://www.typo3-solr.com/fileadmin/files/solr/solr-typo3-plugin-#{new_resource.plugin}.jar"
     mode 0644
-    notifies :restart, resources(:service => "tomcat"), :immediately
+    notifies :restart, "service[tomcat]", :immediately
     only_if { Gem::Version.new(new_resource.plugin) > Gem::Version.new('0.0.0') }
   end
 
@@ -200,27 +218,27 @@ action :add do
   remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3lib/solr-typo3-access-#{new_resource.plugin_access}.jar" do
     source "http://www.typo3-solr.com/fileadmin/files/solr/Solr4x/solr-typo3-access-#{new_resource.plugin_access}.jar"
     mode 0644
-    notifies :restart, resources(:service => "tomcat"), :immediately
+    notifies :restart, "service[tomcat]", :immediately
     only_if { Gem::Version.new(new_resource.plugin_access) > Gem::Version.new('0.0.0') }
   end
 
   remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3lib/solr-typo3-utils-#{new_resource.plugin_utils}.jar" do
     source "http://www.typo3-solr.com/fileadmin/files/solr/Solr4x/solr-typo3-utils-#{new_resource.plugin_utils}.jar"
     mode 0644
-    notifies :restart, resources(:service => "tomcat"), :immediately
+    notifies :restart, "service[tomcat]", :immediately
     only_if { Gem::Version.new(new_resource.plugin_utils) > Gem::Version.new('0.0.0') }
   end
 
   remote_file "#{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}/typo3lib/commons-lang3-#{new_resource.plugin_lang}.jar" do
     source "http://www.typo3-solr.com/fileadmin/files/solr/Solr4x/commons-lang3-#{new_resource.plugin_lang}.jar"
     mode 0644
-    notifies :restart, resources(:service => "tomcat"), :immediately
+    notifies :restart, "service[tomcat]", :immediately
     only_if { Gem::Version.new(new_resource.plugin_lang) > Gem::Version.new('0.0.0') }
   end
 
   # reset directory access restrictions
 
-  execute "chown" do
+  execute "chown - #{new_resource.name}" do
     command "chown -R #{node[:tomcat][:user]}:#{node[:tomcat][:group]} #{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name} && chmod -R o+rw #{node[:typo3_solr][:solr][:solr_home]}/#{new_resource.name}"
   end
 
@@ -249,6 +267,8 @@ action :remove do
   directory "#{node[:tomcat][:webapp_dir]}/#{new_resource.name}" do
     action :delete
     recursive true
-    notifies :restart, resources(:service => "tomcat")
+    notifies :restart, "service[tomcat]", :immediately
   end
+
+  new_resource.updated_by_last_action(true)
 end
