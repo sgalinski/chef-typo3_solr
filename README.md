@@ -17,6 +17,13 @@ The following Opscode cookbooks are dependencies:
 
 * tomcat
 
+If you want to user this cookbook with EXT:solr >= 3.0 you have to install java 7 on your system. When using the
+java-cookbook, you need to override this attribute:
+
+```ruby
+node[:java][:jdk_version] = "7"
+```
+
 Attributes
 ==========
 
