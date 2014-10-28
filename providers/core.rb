@@ -18,4 +18,6 @@ end
 action :remove do
   delete_url = "http://127.0.0.1:8080/#{new_resource.app}/admin/cores?action=UNLOAD&core=#{new_resource.name}&deleteIndex=true"
   Net::HTTP.get_response(URI.parse(delete_url))
+
+  new_resource.updated_by_last_action(true)
 end
