@@ -19,13 +19,24 @@ suites:
       - recipe[apt::default]
       - recipe[typo3_solr::default]
     attributes:
-  - name: typo3_solr_2-1
+  - name: typo3_solr_2-1_java6
     run_list:
       - recipe[apt::default]
       - recipe[typo3_solr::default]
       - recipe[fake::typo3_solr_2-1]
-  - name: typo3_solr_3-0
+  - name: typo3_solr_2-1_java7
+    run_list:
+      - recipe[apt::default]
+      - recipe[typo3_solr::default]
+      - recipe[fake::typo3_solr_2-1]
+    attributes:
+      java:
+        jdk_version: "7"
+  - name: typo3_solr_3-0_java7
     run_list:
       - recipe[apt::default]
       - recipe[typo3_solr::default]
       - recipe[fake::typo3_solr_3-0]
+    attributes:
+      java:
+        jdk_version: "7"
